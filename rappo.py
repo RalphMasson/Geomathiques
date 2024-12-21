@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton
 from PyQt5.QtGui import QPixmap, QTransform, QImage
 from PyQt5.QtCore import Qt
 from PIL import Image, ImageEnhance
@@ -33,6 +33,47 @@ class TransparentWindow(QMainWindow):
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setPixmap(self.current_pixmap)
         self.label.resize(self.current_pixmap.width(), self.current_pixmap.height())
+
+        # Ajouter les boutons flottants
+        self.zoom_in_button = QPushButton("+", self)
+        self.zoom_out_button = QPushButton("-", self)
+        self.rotate_left_button = QPushButton("←", self)
+        self.rotate_right_button = QPushButton("→", self)
+
+        # Connecter les boutons aux fonctions
+        self.zoom_in_button.clicked.connect(lambda: self.scale_image(1.1))
+        self.zoom_out_button.clicked.connect(lambda: self.scale_image(0.9))
+        self.rotate_left_button.clicked.connect(lambda: self.rotate_image(-1))  # Rotation de 1° à gauche
+        self.rotate_right_button.clicked.connect(lambda: self.rotate_image(1))  # Rotation de 1° à droite
+
+        # Empêcher les boutons de recevoir le focus clavier
+        for button in [self.zoom_in_button, self.zoom_out_button, self.rotate_left_button, self.rotate_right_button]:
+            button.setFocusPolicy(Qt.NoFocus)
+
+        # Styles des boutons
+        button_style = """
+            QPushButton {
+                background-color: white;
+                border: 1px solid black;
+                border-radius: 15px;
+                font-size: 18px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: lightgray;
+            }
+        """
+        self.zoom_in_button.setStyleSheet(button_style)
+        self.zoom_out_button.setStyleSheet(button_style)
+        self.rotate_left_button.setStyleSheet(button_style)
+        self.rotate_right_button.setStyleSheet(button_style)
+
+        self.zoom_in_button.resize(30, 30)
+        self.zoom_out_button.resize(30, 30)
+        self.rotate_left_button.resize(30, 30)
+        self.rotate_right_button.resize(30, 30)
+
+        self.update_button_positions()
 
         # Déplacer la fenêtre
         self.offset = None
@@ -122,6 +163,21 @@ class TransparentWindow(QMainWindow):
         self.label.setPixmap(self.current_pixmap)
         self.label.resize(self.current_pixmap.width(), self.current_pixmap.height())
         self.resize(self.label.width(), self.label.height())
+
+        # Mettre à jour la position des boutons
+        self.update_button_positions()
+
+    def update_button_positions(self):
+        """
+        Positionner les boutons flottants au centre de l'image.
+        """
+        center_x = self.width() // 2
+        center_y = self.height() // 2
+
+        self.zoom_in_button.move(center_x - 80, center_y)
+        self.zoom_out_button.move(center_x - 40, center_y)
+        self.rotate_left_button.move(center_x + 10, center_y)
+        self.rotate_right_button.move(center_x + 50, center_y)
 
     def center_window(self):
         """
