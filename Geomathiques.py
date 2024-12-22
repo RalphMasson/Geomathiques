@@ -18,7 +18,7 @@ class TransparentWindow(QMainWindow):
         self.paths = {"rapporteur": rapporteur_path, "equerre": equerre_path}
         self.current_image_key = "rapporteur"
         self.rotation_angle = 0
-        self.scale_factor = 0.3 if self.current_image_key == "equerre" else 1
+        self.scale_factor = 1 if self.current_image_key == "equerre" else 1
         self.init_ui()
         self.load_and_display_image()
 
@@ -74,7 +74,7 @@ class TransparentWindow(QMainWindow):
 
     def switch_image(self):
         self.current_image_key = "equerre" if self.current_image_key == "rapporteur" else "rapporteur"
-        self.scale_factor = 0.3 if self.current_image_key == "equerre" else 1
+        self.scale_factor = 1 if self.current_image_key == "equerre" else 1
         self.load_and_display_image()
         self.update_displayed_image()
 
