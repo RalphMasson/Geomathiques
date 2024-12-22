@@ -256,8 +256,8 @@ try:
     equerre_path = os.path.join(paths, 'pngegg.png')
 
 except:
-    rapporteur_path = r'C://Users//MASSON//Downloads//rapporteur5.png'  # Chemin de l'image du rapporteur
-    equerre_path = r'C://Users//MASSON//Downloads//pngegg.png'  # Chemin de l'image de l'équerre
+    rapporteur_path = r'C://Users//MASSON//Downloads//Geomathiques//rapporteur.png'  # Chemin de l'image du rapporteur
+    equerre_path = r'C://Users//MASSON//Downloads//Geomathiques//equerre.png'  # Chemin de l'image de l'équerre
 
 window = TransparentWindow(rapporteur_path, equerre_path)
 window.show()
