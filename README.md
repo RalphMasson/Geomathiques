@@ -1,7 +1,7 @@
 # Rapporteur transparent à déplacer 
 
 <p align="center">
-  <img src="https://github.com/RalphMasson/Rapporteur/blob/main/demo.gif" width="400" />
+  <img src="https://github.com/RalphMasson/Rapporteur/blob/main/Geomathiques_Demo.gif" width="400" />
 </p>
 
 Cet outil pédagogique intuitif se superpose à toutes les fenêtres ouvertes et permet de mesurer des angles pour une projection en classe.
