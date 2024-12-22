@@ -13,4 +13,4 @@ Cet outil pédagogique intuitif se superpose à toutes les fenêtres ouvertes et
 4) Zoom : Touche "+" et "-" 
 
 # Téléchargement #
-Ce lien : https://github.com/RalphMasson/Rapporteur/releases/tag/0.2 et télécharger rappo.exe
+Ce lien : https://github.com/RalphMasson/Rapporteur/releases/tag/v0.3 et télécharger rappo.exe
