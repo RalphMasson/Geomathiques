@@ -17,3 +17,10 @@ Ce logiciel pédagogique intuitif se superpose à toutes les fenêtres ouvertes 
 
 # Téléchargement #
 Ce lien : https://github.com/RalphMasson/Geomathiques/releases/tag/v0.3 et télécharger rappo.exe
+
+# Code #
+Voici les différentes bibliothèques utilisées : 
+- PyQt5 pour gérer l'interface
+- PIL (pillow) pour gérer les images
+- cryptography pour contourner la détection antivirus (SPOILER : il est quand-même détecté comme malveillant)
+
