@@ -5,21 +5,17 @@ from PIL import Image, ImageEnhance
 import sys
 
 class TransparentWindow(QMainWindow):
-    def __init__(self, image_path):
+    def __init__(self, rapporteur_path, equerre_path):
         super().__init__()
 
-        # Charger et ajuster l'image (augmenter contraste et luminosité)
-        pil_image = Image.open(image_path)
-        enhancer_contrast = ImageEnhance.Contrast(pil_image)
-        enhanced_image = enhancer_contrast.enhance(2.0)  # Augmenter le contraste (facteur 2.0)
+        self.rapporteur_path = rapporteur_path
+        self.equerre_path = equerre_path
+        self.current_image_path = self.rapporteur_path  # Commence avec le rapporteur
 
-        enhancer_brightness = ImageEnhance.Brightness(enhanced_image)
-        enhanced_image = enhancer_brightness.enhance(1.2)  # Augmenter la luminosité (facteur 1.2)
+        # Charger et ajuster l'image initiale
+        self.load_and_enhance_image(self.current_image_path)
 
-        # Convertir l'image améliorée en QPixmap
-        self.original_pixmap = self.pil_to_pixmap(enhanced_image)
-        self.current_pixmap = self.original_pixmap
-        self.scale_factor = 1.0
+        self.scale_factor = 0.3 if self.current_image_path == self.equerre_path else 1.0  # Taille initiale réduite pour l'équerre
         self.rotation_angle = 0
 
         # Configurer la fenêtre
@@ -39,15 +35,17 @@ class TransparentWindow(QMainWindow):
         self.zoom_out_button = QPushButton("-", self)
         self.rotate_left_button = QPushButton("←", self)
         self.rotate_right_button = QPushButton("→", self)
+        self.switch_button = QPushButton("Mode", self)
 
         # Connecter les boutons aux fonctions
         self.zoom_in_button.clicked.connect(lambda: self.scale_image(1.1))
         self.zoom_out_button.clicked.connect(lambda: self.scale_image(0.9))
-        self.rotate_left_button.clicked.connect(lambda: self.rotate_image(-1))  # Rotation de 1° à gauche
-        self.rotate_right_button.clicked.connect(lambda: self.rotate_image(1))  # Rotation de 1° à droite
+        self.rotate_left_button.clicked.connect(lambda: self.rotate_image(-1))
+        self.rotate_right_button.clicked.connect(lambda: self.rotate_image(1))
+        self.switch_button.clicked.connect(self.switch_image)
 
         # Empêcher les boutons de recevoir le focus clavier
-        for button in [self.zoom_in_button, self.zoom_out_button, self.rotate_left_button, self.rotate_right_button]:
+        for button in [self.zoom_in_button, self.zoom_out_button, self.rotate_left_button, self.rotate_right_button, self.switch_button]:
             button.setFocusPolicy(Qt.NoFocus)
 
         # Styles des boutons
@@ -63,20 +61,34 @@ class TransparentWindow(QMainWindow):
                 background-color: lightgray;
             }
         """
-        self.zoom_in_button.setStyleSheet(button_style)
-        self.zoom_out_button.setStyleSheet(button_style)
-        self.rotate_left_button.setStyleSheet(button_style)
-        self.rotate_right_button.setStyleSheet(button_style)
+        for button in [self.zoom_in_button, self.zoom_out_button, self.rotate_left_button, self.rotate_right_button, self.switch_button]:
+            button.setStyleSheet(button_style)
 
         self.zoom_in_button.resize(30, 30)
         self.zoom_out_button.resize(30, 30)
         self.rotate_left_button.resize(30, 30)
         self.rotate_right_button.resize(30, 30)
+        self.switch_button.resize(70, 30)
 
         self.update_button_positions()
 
         # Déplacer la fenêtre
         self.offset = None
+        self.is_rotating = False
+
+    def load_and_enhance_image(self, image_path):
+        """
+        Charger et améliorer l'image à partir du chemin donné.
+        """
+        pil_image = Image.open(image_path)
+        enhancer_contrast = ImageEnhance.Contrast(pil_image)
+        enhanced_image = enhancer_contrast.enhance(2.0)  # Augmenter le contraste
+
+        enhancer_brightness = ImageEnhance.Brightness(enhanced_image)
+        enhanced_image = enhancer_brightness.enhance(1.2)  # Augmenter la luminosité
+
+        self.original_pixmap = self.pil_to_pixmap(enhanced_image)
+        self.current_pixmap = self.original_pixmap
 
     def pil_to_pixmap(self, pil_image):
         """
@@ -86,6 +98,15 @@ class TransparentWindow(QMainWindow):
         data = pil_image.tobytes("raw", "RGBA")
         width, height = pil_image.size
         return QPixmap.fromImage(QImage(data, width, height, QImage.Format_RGBA8888))
+
+    def switch_image(self):
+        """
+        Basculer entre le rapporteur et l'équerre.
+        """
+        self.current_image_path = self.equerre_path if self.current_image_path == self.rapporteur_path else self.rapporteur_path
+        self.load_and_enhance_image(self.current_image_path)
+        self.scale_factor = 0.3 if self.current_image_path == self.equerre_path else 1.0  # Taille initiale ajustée
+        self.update_image()
 
     def keyPressEvent(self, event):
         """
@@ -106,24 +127,37 @@ class TransparentWindow(QMainWindow):
 
     def mousePressEvent(self, event):
         """
-        Capture le clic pour déplacer la fenêtre.
+        Capture le clic pour déplacer ou initier la rotation.
         """
         if event.button() == Qt.LeftButton:
-            self.offset = event.globalPos() - self.frameGeometry().topLeft()
+            pos = event.pos()
+            margin = 20  # Zone périphérique pour la rotation
+            if (pos.x() < margin or pos.x() > self.width() - margin or
+                    pos.y() < margin or pos.y() > self.height() - margin):
+                self.is_rotating = True
+                self.last_mouse_pos = event.globalPos()
+            else:
+                self.offset = event.globalPos() - self.frameGeometry().topLeft()
 
     def mouseMoveEvent(self, event):
         """
-        Déplacement de la fenêtre.
+        Déplacement de la fenêtre ou rotation.
         """
-        if self.offset is not None and event.buttons() == Qt.LeftButton:
+        if self.is_rotating and event.buttons() == Qt.LeftButton:
+            current_pos = event.globalPos()
+            delta = current_pos - self.last_mouse_pos
+            self.last_mouse_pos = current_pos
+            self.rotate_image(delta.x() * 0.2)  # Sensibilité de la rotation
+        elif self.offset is not None and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self.offset)
 
     def mouseReleaseEvent(self, event):
         """
-        Fin du déplacement de la fenêtre.
+        Fin du déplacement ou de la rotation.
         """
         if event.button() == Qt.LeftButton:
             self.offset = None
+            self.is_rotating = False
 
     def scale_image(self, scale_factor):
         """
@@ -143,14 +177,12 @@ class TransparentWindow(QMainWindow):
         """
         Appliquer zoom et rotation à l'image.
         """
-        # Appliquer la rotation autour du centre
         transform = QTransform()
         transform.translate(self.original_pixmap.width() // 2, self.original_pixmap.height() // 2)
         transform.rotate(self.rotation_angle)
         transform.translate(-self.original_pixmap.width() // 2, -self.original_pixmap.height() // 2)
         rotated_pixmap = self.original_pixmap.transformed(transform, Qt.SmoothTransformation)
 
-        # Appliquer le zoom
         zoomed_pixmap = rotated_pixmap.scaled(
             int(self.original_pixmap.width() * self.scale_factor),
             int(self.original_pixmap.height() * self.scale_factor),
@@ -158,26 +190,25 @@ class TransparentWindow(QMainWindow):
             Qt.SmoothTransformation,
         )
 
-        # Mettre à jour l'image affichée
         self.current_pixmap = zoomed_pixmap
         self.label.setPixmap(self.current_pixmap)
         self.label.resize(self.current_pixmap.width(), self.current_pixmap.height())
         self.resize(self.label.width(), self.label.height())
 
-        # Mettre à jour la position des boutons
         self.update_button_positions()
 
     def update_button_positions(self):
         """
-        Positionner les boutons flottants au centre de l'image.
+        Positionner les boutons flottants.
         """
         center_x = self.width() // 2
         center_y = self.height() // 2
 
-        self.zoom_in_button.move(center_x - 80, center_y)
-        self.zoom_out_button.move(center_x - 40, center_y)
-        self.rotate_left_button.move(center_x + 10, center_y)
-        self.rotate_right_button.move(center_x + 50, center_y)
+        self.zoom_in_button.move(center_x - 100, center_y)
+        self.zoom_out_button.move(center_x - 60, center_y)
+        self.rotate_left_button.move(center_x - 20, center_y)
+        self.rotate_right_button.move(center_x + 20, center_y)
+        self.switch_button.move(center_x + 60, center_y)
 
     def center_window(self):
         """
@@ -190,7 +221,8 @@ class TransparentWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    image_path = r"C:\Users\MASSON\Downloads\rapporteur4.png"  # Remplace par le chemin de ton image
-    window = TransparentWindow(image_path)
+    rapporteur_path = r"C:\Users\MASSON\Downloads\rapporteur4.png"  # Chemin de l'image du rapporteur
+    equerre_path = r"C:\Users\MASSON\Downloads\pngegg.png"  # Chemin de l'image de l'équerre
+    window = TransparentWindow(rapporteur_path, equerre_path)
     window.show()
     sys.exit(app.exec_())
